@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Trendly Support</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 700px;
+            height: 90vh;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #111827;
+            color: white;
+            padding: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .header p {
+            margin: 5px 0 0;
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .customer-section {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            background: #fafafa;
+        }
+
+        .customer-section input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 14px;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .bubble {
+            max-width: 75%;
+            padding: 12px 15px;
+            border-radius: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .message.bot .bubble {
+            background: #f0f0f0;
+            color: #222;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.user .bubble {
+            background: #111827;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            outline: none;
+            font-size: 15px;
+        }
+
+        .input-area button {
+            border: none;
+            background: #111827;
+            color: white;
+            padding: 0 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .input-area button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .typing {
+            color: #777;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                align-items: stretch;
+            }
+
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="chat-container">
+
+    <div class="header">
+        <h1>Trendly Support</h1>
+        <p>Customer Support Assistant</p>
+    </div>
+
+    <div class="customer-section">
+        <input
+            id="customerId"
+            type="text"
+            placeholder="Customer ID (example: C-101)"
+            value="C-101"
+        >
+    </div>
+
+    <div id="messages" class="messages">
+
+        <div class="message bot">
+            <div class="bubble">
+                Hello!  I'm the Trendly Support Assistant.
+                How can I help you today?
+            </div>
+        </div>
+
+    </div>
+
+    <div id="typing" class="typing" style="display: none; padding: 0 20px;">
+        Trendly Assistant is typing...
+    </div>
+
+    <div class="input-area">
+
+        <input
+            id="messageInput"
+            type="text"
+            placeholder="Type your message..."
+            autocomplete="off"
+        >
+
+        <button id="sendButton">
+            Send
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    // Create one conversation ID for this browser session
+    const conversationId =
+        "web-" + crypto.randomUUID();
+
+    const messages = document.getElementById("messages");
+    const messageInput = document.getElementById("messageInput");
+    const sendButton = document.getElementById("sendButton");
+    const customerId = document.getElementById("customerId");
+    const typing = document.getElementById("typing");
+
+
+    function addMessage(text, type) {
+
+        const message = document.createElement("div");
+
+        message.className =
+            "message " + type;
+
+        const bubble =
+            document.createElement("div");
+
+        bubble.className = "bubble";
+
+        bubble.textContent = text;
+
+        message.appendChild(bubble);
+
+        messages.appendChild(message);
+
+        messages.scrollTop =
+            messages.scrollHeight;
+    }
+
+
+    async function sendMessage() {
+
+        const message =
+            messageInput.value.trim();
+
+        if (!message) {
+            return;
+        }
+
+        const customer =
+            customerId.value.trim();
+
+        if (!customer) {
+            alert("Please enter a Customer ID.");
+            return;
+        }
+
+        addMessage(message, "user");
+
+        messageInput.value = "";
+
+        sendButton.disabled = true;
+
+        typing.style.display = "block";
+
+        try {
+
+            const response =
+                await fetch("/chat", {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        conversation_id:
+                            conversationId,
+
+                        message:
+                            message,
+
+                        customer_id:
+                            customer
+
+                    })
+
+                });
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Server returned " +
+                    response.status
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            addMessage(
+                data.response,
+                "bot"
+            );
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            addMessage(
+                "Sorry, I couldn't connect to the Trendly server. Please try again.",
+                "bot"
+            );
+
+        } finally {
+
+            typing.style.display = "none";
+
+            sendButton.disabled = false;
+
+            messageInput.focus();
+
+        }
+
+    }
+
+
+    sendButton.addEventListener(
+        "click",
+        sendMessage
+    );
+
+
+    messageInput.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (event.key === "Enter") {
+
+                sendMessage();
+
+            }
+
+        }
+    );
+
+</script>
+
+</body>
+</html>
